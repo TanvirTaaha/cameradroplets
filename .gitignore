@@ -1,0 +1,39 @@
+# --- Build Directories ---
+# Ignore the entire build directory (standard practice)
+build/
+bin/
+lib/
+out/
+
+
+# --- CMake Generated Files ---
+# If you accidentally run cmake in the root (in-source build)
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+
+# --- IDE Specifics ---
+# Visual Studio
+.vs/
+*.sln
+*.vcxproj
+*.user
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+# CLion / JetBrains
+.idea/
+cmake-build-*/
+# --- OS Specific ---
+.DS_Store
+Thumbs.db

@@ -1,0 +1,6 @@
+name: cameradroplets
+services:
+  app:
+    build: .
+    image: cameradroplets:latest
+    container_name: cameradroplets

@@ -1,0 +1,6 @@
+# Ignore everything in the current directory and subdirectories
+*
+
+# But do not ignore the following files
+!src/
+!CMakeLists.txt
