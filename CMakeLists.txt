@@ -9,7 +9,16 @@ add_compile_options(-O3 -march=native -Wall -Wextra)
 
 # Locate dependencies inside the Linux environment
 find_package(AWSSDK REQUIRED COMPONENTS s3)
-find_package(librdkafka REQUIRED)
+find_package(librdkafka CONFIG QUIET)
+if (NOT librdkafka_FOUND)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBRDKAFKA REQUIRED rdkafka)
+
+    add_library(librdkafka::rdkafka INTERFACE IMPORTED)
+    target_include_directories(librdkafka::rdkafka INTERFACE ${LIBRDKAFKA_INCLUDE_DIRS})
+    target_link_libraries(librdkafka::rdkafka INTERFACE ${LIBRDKAFKA_LIBRARIES})
+    target_compile_options(librdkafka::rdkafka INTERFACE ${LIBRDKAFKA_CFLAGS_OTHER})
+endif()
 find_package(nlohmann_json REQUIRED)
 
 # Explicitly handle FFmpeg raw variables if standard config targets aren't present
@@ -27,11 +36,16 @@ target_include_directories(camdrops
         ${MOODYCAMEL_INCLUDE_DIR}
 )
 
+find_package(modern-cpp-kafka QUIET)
+
 target_link_libraries(camdrops
     PRIVATE
         avformat avcodec avutil swscale  # Core FFmpeg binary links
         ${AWSSDK_LIBRARIES}
         librdkafka::rdkafka
-        modern-cpp-kafka::modern-cpp-kafka
         nlohmann_json::nlohmann_json
 )
+
+if (TARGET modern-cpp-kafka::modern-cpp-kafka)
+    target_link_libraries(camdrops PRIVATE modern-cpp-kafka::modern-cpp-kafka)
+endif()
