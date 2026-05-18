@@ -37,3 +37,9 @@ cmake-build-*/
 # --- OS Specific ---
 .DS_Store
 Thumbs.db
+
+# --- Logs and ENV Files ---
+*.log
+logs/
+*.env
+.env.*

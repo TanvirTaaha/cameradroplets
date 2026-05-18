@@ -4,3 +4,36 @@ services:
     build: .
     image: cameradroplets:latest
     container_name: cameradroplets
+    command: ["tail", "-f", "/dev/null"]
+
+  broker:
+    image: apache/kafka:4.0.1
+    container_name: kafka-broker
+    hostname: kafka-broker
+    ports:
+      - "9092:9092"
+    env_file:
+      - .env
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:8.0.1
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - broker
+      - schema-registry

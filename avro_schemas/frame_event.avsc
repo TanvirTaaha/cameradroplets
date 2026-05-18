@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "FrameEvent",
+  "namespace": "com.example",
+  "fields": [
+    {"name": "id", "type": "int"},
+    {"name": "username", "type": "string"},
+    {"name": "email", "type": ["null", "string"], "default": null}
+  ]
+}

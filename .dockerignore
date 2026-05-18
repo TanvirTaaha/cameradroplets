@@ -3,4 +3,9 @@
 
 # But do not ignore the following files
 !src/
+!include/
 !CMakeLists.txt
+!lib_src/
+lib_src/**/.git
+lib_src/**/.github
+lib_src/**/build
