@@ -38,7 +38,8 @@ WORKDIR /third_party
 # 2. Header-only libraries: use copied local repos first, clone only if missing
 RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
     ( [ -d "concurrentqueue" ] || git clone --depth 1 --branch v1.0.4 https://github.com/cameron314/concurrentqueue.git ) && \
-    ( [ -d "json" ] || git clone --depth 1 --branch v3.12.0 https://github.com/nlohmann/json.git )
+    ( [ -d "json" ] || git clone --depth 1 --branch v3.12.0 https://github.com/nlohmann/json.git ) && \
+    ( [ -d "modern-cpp-kafka" ] || git clone --depth 1 https://github.com/morganstanley/modern-cpp-kafka.git )
 
 # 3. Build librdkafka explicitly compiled with active compression flags
 RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
