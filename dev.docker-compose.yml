@@ -1,0 +1,24 @@
+name: cameradroplets_dev
+
+services:
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.stage1
+    image: cameradroplets:stage1
+    container_name: cameradroplets-dev
+    env_file:
+      - .env
+    command: ["tail", "-f", "/dev/null"]
+    volumes:
+      - ./src:/app/src
+      - ./include:/app/include
+      - ./CMakeLists.txt:/app/CMakeLists.txt
+    networks:
+      - cameradroplets_network
+
+networks:
+  cameradroplets_network:
+    name: cameradroplets_network
+    driver: bridge
+    external: true

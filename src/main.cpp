@@ -4,9 +4,10 @@
 
 #include <chrono>
 #include <cstdlib>
-#include <format>
+#include <atomic>
 #include <iostream>
-#include <jthread>
+#include <string>
+#include <thread>
 #include <vector>
 using namespace std::chrono_literals;
 
@@ -22,6 +23,7 @@ kafka::Properties get_kafka_props() {
 int main() {
   std::cout << "Starting main thread" << std::endl;
   moodycamel::BlockingConcurrentQueue<int> queue;
+  std::atomic<bool> stop_requested{false};
 
   // std::thread metric_publisher([&queue]() {
   //   int item;
@@ -33,7 +35,7 @@ int main() {
   //   }
   // });
 
-  std::jthread kafka_publisher([&queue](std::stop_token stoken) {
+  std::thread kafka_publisher([&queue, &stop_requested]() {
     int item;
 
     std::string topic = "test_topic";
@@ -59,17 +61,17 @@ int main() {
       }
     };
 
-    while (!stoken.stop_requested()) {
-      if (queue.wait_dequeue_timed(item, 500ms)) {
+    while (!stop_requested.load(std::memory_order_relaxed)) {
+      if (queue.wait_dequeue_timed(item, 5ms)) {
         if (item == -1) break;  // Poison pill
-        std::string value = std::format("This is frame no: {}", item);
+        std::string value = "This is frame no: " + std::to_string(item);
         std::cout << "Publishing to Kafka, msg:\"" << value << '"' << std::endl;
         auto record = kafka::clients::producer::ProducerRecord(topic, kafka::Key(key.c_str(), key.size()), kafka::Value(value.c_str(), value.size()));
 
         // Send the message
         kafka_producer->send(record, deliveryCb);
       } else {
-        std::cout << "Nothing to send for 500ms" << std::endl;
+        // std::cout << "Nothing to send for 500ms" << std::endl;
       }
     }
     std::cout << "Exiting kafka publisher thread" << std::endl;
@@ -79,10 +81,11 @@ int main() {
   while (rc) {
     std::cout << "Simulating events: " << rc << std::endl;
     queue.enqueue(rc);
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     rc--;
   }
   std::cout << "Sending poison pill explicitly" << std::endl;
+  stop_requested.store(true, std::memory_order_relaxed);
   queue.enqueue(-1);  // Send poison pill to stop threads
 
   // metric_publisher.join();

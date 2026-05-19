@@ -42,7 +42,7 @@ RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
 # 3. Build librdkafka explicitly compiled with active compression flags
 RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
     ( [ -d "librdkafka" ] || git clone https://github.com/confluentinc/librdkafka.git ) && \
-    cd librdkafka && \
+    cd /third_party/librdkafka && \
     ./configure --enable-zstd --enable-lz4 && \
     make -j$(nproc) && make install
 
@@ -53,7 +53,7 @@ RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
     && if [ -d "/third_party/aws-sdk-cpp/.git" ]; then \
          git -C /third_party/aws-sdk-cpp submodule update --init --recursive --depth 1; \
        fi \
-    && cd aws-sdk-cpp && mkdir -p build && cd build && \
+    && cd /third_party/aws-sdk-cpp && mkdir -p build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DBUILD_ONLY="s3" \
           -DAWS_CUSTOM_MEMORY_MANAGEMENT=0 \
@@ -67,29 +67,3 @@ COPY . .
 RUN rm -rf build && mkdir build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make -j$(nproc)
-
-# ==========================================
-# STAGE 2: Final Optimized Runtime Container
-# ==========================================
-FROM ubuntu:24.04
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update && apt-get install -y \
-    libssl3 \
-    libcurl4 \
-    libzstd1 \
-    liblz4-1 \
-    ffmpeg \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Pull only the clean dynamic libs and application target
-COPY --from=builder /usr/local/lib /usr/local/lib
-COPY --from=builder /app/build/camdrops /app/camdrops
-
-RUN ldconfig
