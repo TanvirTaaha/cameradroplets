@@ -4,6 +4,8 @@ services:
     build: .
     image: cameradroplets:latest
     container_name: cameradroplets
+    env_file:
+      - .env
     command: ["tail", "-f", "/dev/null"]
 
   kafka-broker:

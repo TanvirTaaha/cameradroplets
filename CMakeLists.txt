@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(CameraDroplets LANGUAGES CXX VERSION 0.1.0)
+project("Camera Droplets" VERSION 0.1.0 LANGUAGES CXX)
 set(PROJECT_AUTHOR "Tanvir Taaha <tanvir.taaha@gmail.com>")
 
 include(FetchContent)
@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 # Enforce high-performance optimizations
@@ -91,7 +92,7 @@ endif()
 # Explicitly handle FFmpeg raw variables if standard config targets aren't present
 find_program(FFMPEG_EXEC ffmpeg REQUIRED)
 
-add_executable(camdrops src/main.cpp)
+add_executable(camdrops src/main.cpp src/frame_producer.cpp)
 
 target_include_directories(camdrops 
     PRIVATE
