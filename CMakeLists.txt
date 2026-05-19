@@ -92,7 +92,7 @@ endif()
 # Explicitly handle FFmpeg raw variables if standard config targets aren't present
 find_program(FFMPEG_EXEC ffmpeg REQUIRED)
 
-add_executable(camdrops src/main.cpp src/frame_producer.cpp)
+add_executable(camdrops src/main.cpp)
 
 target_include_directories(camdrops 
     PRIVATE
