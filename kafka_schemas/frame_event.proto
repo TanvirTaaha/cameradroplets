@@ -1,0 +1,10 @@
+syntax = "proto3";
+package cameradroplets.frameevent.proto;
+
+message FrameMetaData {
+  string timestamp = 1; // captured time with timezone Asia/Dhaka, e.g., "2024-06-01T12:34:56+06:00"
+  string camera_id = 2; // unique identifier for the camera, e.g., "camera1", "camera2"
+  string camera_location = 3; // physical location of the camera, e.g., "Building A, Floor 1, Corridor 2"
+  string frame_path = 4; // path to the frame image in the shared storage, e.g., /data/camera1/frame123.jpg or s3://bucket/camera1/frame123.jpg
+  uint64 current_frame_number = 5; // will not run out of range for a long time(for 10fps 58.4 billion years)
+}

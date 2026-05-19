@@ -4,59 +4,49 @@ set(PROJECT_AUTHOR "Tanvir Taaha <tanvir.taaha@gmail.com>")
 
 include(FetchContent)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 # Enforce high-performance optimizations
 add_compile_options(-O3 -march=native -Wall -Wextra)
 
 set(LOCAL_THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/lib_src")
-file(MAKE_DIRECTORY "${LOCAL_THIRD_PARTY_DIR}")
-
-function(ensure_local_repo fetch_name local_dir repo_url repo_tag)
-    set(local_path "${LOCAL_THIRD_PARTY_DIR}/${local_dir}")
-    if(EXISTS "${local_path}")
-        message(STATUS "Using local ${fetch_name} at ${local_path}")
-    else()
-        find_package(Git QUIET)
-        if(NOT Git_FOUND)
-            message(FATAL_ERROR "Missing local ${dep_name} and git is unavailable for fallback clone")
-        endif()
-
-        set(clone_cmd "${GIT_EXECUTABLE}" clone --depth 1 "${repo_url}" "${local_path}")
-        if(NOT "${repo_tag}" STREQUAL "")
-            list(INSERT clone_cmd 3 --branch "${repo_tag}")
-        endif()
-
-        execute_process(
-            COMMAND ${clone_cmd}
-            RESULT_VARIABLE clone_result
-        )
-        if(NOT clone_result EQUAL 0)
-            message(FATAL_ERROR "Failed to clone ${fetch_name} from ${repo_url}")
-        endif()
-    endif()
-
-    string(TOUPPER "${fetch_name}" dep_name_upper)
-    set("FETCHCONTENT_SOURCE_DIR_${dep_name_upper}" "${local_path}" PARENT_SCOPE)
-endfunction()
 
 # Locate dependencies inside the Linux environment
-# find_package(AWSSDK REQUIRED COMPONENTS s3)
-find_package(librdkafka QUIET)
-if(NOT librdkafka_FOUND)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(RDKAFKA REQUIRED rdkafka)
+find_package(PkgConfig REQUIRED)
+find_package(AWSSDK REQUIRED COMPONENTS s3)
 
-    add_library(librdkafka::rdkafka INTERFACE IMPORTED)
-    target_include_directories(librdkafka::rdkafka INTERFACE ${RDKAFKA_INCLUDE_DIRS})
-    target_link_directories(librdkafka::rdkafka INTERFACE ${RDKAFKA_LIBRARY_DIRS})
-    target_link_libraries(librdkafka::rdkafka INTERFACE ${RDKAFKA_LIBRARIES})
+pkg_check_modules(RDKAFKA REQUIRED rdkafka)
+pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil libswscale)
+
+add_library(librdkafka::rdkafka INTERFACE IMPORTED)
+target_include_directories(librdkafka::rdkafka INTERFACE ${RDKAFKA_INCLUDE_DIRS})
+target_link_directories(librdkafka::rdkafka INTERFACE ${RDKAFKA_LIBRARY_DIRS})
+target_link_libraries(librdkafka::rdkafka INTERFACE ${RDKAFKA_LIBRARIES})
+
+
+
+set(CONCURRENTQUEUE_LOCAL_DIR "${LOCAL_THIRD_PARTY_DIR}/concurrentqueue")
+set(NLOHMANN_JSON_LOCAL_DIR "${LOCAL_THIRD_PARTY_DIR}/json")
+set(MODERN_CPP_KAFKA_LOCAL_DIR "${LOCAL_THIRD_PARTY_DIR}/modern-cpp-kafka")
+
+if(EXISTS "${CONCURRENTQUEUE_LOCAL_DIR}")
+    set(FETCHCONTENT_SOURCE_DIR_CONCURRENTQUEUE "${CONCURRENTQUEUE_LOCAL_DIR}")
+    message(STATUS "Using local concurrentqueue at ${CONCURRENTQUEUE_LOCAL_DIR}")
 endif()
 
-ensure_local_repo(concurrentqueue concurrentqueue https://github.com/cameron314/concurrentqueue.git v1.0.4)
-ensure_local_repo(nlohmann_json json https://github.com/nlohmann/json.git v3.12.0)
-ensure_local_repo(modern_cpp_kafka modern-cpp-kafka https://github.com/morganstanley/modern-cpp-kafka.git "")
+if(EXISTS "${NLOHMANN_JSON_LOCAL_DIR}")
+    set(FETCHCONTENT_SOURCE_DIR_NLOHMANN_JSON "${NLOHMANN_JSON_LOCAL_DIR}")
+    message(STATUS "Using local nlohmann_json at ${NLOHMANN_JSON_LOCAL_DIR}")
+endif()
+
+if(EXISTS "${MODERN_CPP_KAFKA_LOCAL_DIR}")
+    set(FETCHCONTENT_SOURCE_DIR_MODERN_CPP_KAFKA "${MODERN_CPP_KAFKA_LOCAL_DIR}")
+    message(STATUS "Using local modern_cpp_kafka at ${MODERN_CPP_KAFKA_LOCAL_DIR}")
+endif()
 
 FetchContent_Declare(
     concurrentqueue
@@ -110,8 +100,8 @@ target_include_directories(camdrops
 
 target_link_libraries(camdrops
     PRIVATE
-        avformat avcodec avutil swscale  # Core FFmpeg binary links
-        # ${AWSSDK_LIBRARIES}
+        PkgConfig::FFMPEG
+        ${AWSSDK_LIBRARIES}
         librdkafka::rdkafka
         moodycamel::concurrentqueue
         nlohmann_json::nlohmann_json
