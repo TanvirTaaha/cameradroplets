@@ -20,9 +20,9 @@ kafka::Properties get_kafka_props() {
         "KAFKA_BOOTSTRAP_SERVERS is not set. Example: export KAFKA_BOOTSTRAP_SERVERS=localhost:9092");
   }
   props.put("bootstrap.servers", bootstrap_servers);
-  props.put("enable.idempotence", "true");
-  props.put("acks", "all");
-  props.put("compression.type", "none");
+  props.put("enable.idempotence", "false");
+  props.put("acks", "1");
+  props.put("compression.type", "gzip");
   return props;
 }
 
@@ -47,6 +47,7 @@ int main() {
 
       std::string topic = "test_topic";
       std::string key = "frame_123";
+      char value_buffer[256]; // Constant buffer to avoid dynamic allocations in the loop
 
       auto kafka_producer = std::make_unique<kafka::clients::producer::KafkaProducer>(get_kafka_props());
 
@@ -59,14 +60,14 @@ int main() {
       while (!stop_requested.load(std::memory_order_relaxed)) {
         if (queue.wait_dequeue_timed(item, 5ms)) {
           if (item == -1) break;  // Poison pill
-          std::string value = "Frame event no: " + std::to_string(item);
-          std::cout << "Publishing to Kafka, msg:\"" << value << '"' << std::endl;
-          auto record = kafka::clients::producer::ProducerRecord(topic, kafka::Key(key.c_str(), key.size()), kafka::Value(value.c_str(), value.size()));
-
+          auto value_len = std::snprintf(value_buffer, sizeof(value_buffer) - 1, "Hello Kafka! Item: %d", item);
+          value_buffer[value_len] = '\0';  // Ensure null-termination
+          std::cout << "Publishing to Kafka, msg:\"" << value_buffer << '"' << std::endl;
+          
           // Send the message
+          // NOTE!: Sending to kafka is async call, so don't use local variables that might go out of scope
+          auto record = kafka::clients::producer::ProducerRecord(topic, kafka::Key(key.c_str(), key.size()), kafka::Value(value_buffer, value_len));
           kafka_producer->send(record, deliveryCb);
-        } else {
-          // std::cout << "Nothing to send for 500ms" << std::endl;
         }
       }
       std::cout << "Exiting kafka publisher thread" << std::endl;
