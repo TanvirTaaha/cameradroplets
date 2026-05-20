@@ -22,7 +22,7 @@ kafka::Properties get_kafka_props() {
   props.put("bootstrap.servers", bootstrap_servers);
   props.put("enable.idempotence", "false");
   props.put("acks", "1");
-  props.put("compression.type", "gzip");
+  props.put("compression.type", "lz4");
   return props;
 }
 
