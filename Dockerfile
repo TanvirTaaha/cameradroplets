@@ -41,8 +41,8 @@ RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
 
 # 3. Build librdkafka explicitly compiled with active compression flags
 RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
-    ( [ -d "librdkafka" ] || git clone https://github.com/confluentinc/librdkafka.git ) && \
-    cd librdkafka && \
+    ( [ -d "librdkafka" ] || git clone --branch v2.14.1 --depth 1 https://github.com/confluentinc/librdkafka.git ) && \
+    cd /third_party/librdkafka && \
     ./configure --enable-zstd --enable-lz4 && \
     make -j$(nproc) && make install
 
@@ -53,7 +53,7 @@ RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
     && if [ -d "/third_party/aws-sdk-cpp/.git" ]; then \
          git -C /third_party/aws-sdk-cpp submodule update --init --recursive --depth 1; \
        fi \
-    && cd aws-sdk-cpp && mkdir -p build && cd build && \
+    && cd /third_party/aws-sdk-cpp && mkdir -p build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DBUILD_ONLY="s3" \
           -DAWS_CUSTOM_MEMORY_MANAGEMENT=0 \

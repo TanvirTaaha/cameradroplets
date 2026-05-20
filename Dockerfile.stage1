@@ -41,7 +41,7 @@ RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
 
 # 3. Build librdkafka explicitly compiled with active compression flags
 RUN --mount=type=cache,target=/root/.cache/git,sharing=locked \
-    ( [ -d "librdkafka" ] || git clone https://github.com/confluentinc/librdkafka.git ) && \
+    ( [ -d "librdkafka" ] || git clone --branch v2.14.1 --depth 1 https://github.com/confluentinc/librdkafka.git ) && \
     cd /third_party/librdkafka && \
     ./configure --enable-zstd --enable-lz4 && \
     make -j$(nproc) && make install
