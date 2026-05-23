@@ -11,8 +11,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
-# Enforce high-performance optimizations
-add_compile_options(-O3 -march=native -Wall -Wextra)
 
 set(LOCAL_THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/lib_src")
 
@@ -92,14 +90,22 @@ endif()
 # Explicitly handle FFmpeg raw variables if standard config targets aren't present
 find_program(FFMPEG_EXEC ffmpeg REQUIRED)
 
-add_executable(camdrops src/main.cpp)
+# Create your actual executable target
+# Create a variable to hold all source files for better organization
+set(SOURCE_FILES
+    src/main.cpp
+    src/ffmpeg_translation_unit.cpp
+)
+set(CAMDROPS_EXE_NAME "camdrops")
+add_executable(${CAMDROPS_EXE_NAME} ${SOURCE_FILES})
 
-target_include_directories(camdrops 
+target_include_directories(${CAMDROPS_EXE_NAME} 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${FFMPEG_INCLUDE_DIRS}
 )
 
-target_link_libraries(camdrops
+target_link_libraries(${CAMDROPS_EXE_NAME}
     PRIVATE
         PkgConfig::FFMPEG
         ${AWSSDK_LIBRARIES}
@@ -108,3 +114,11 @@ target_link_libraries(camdrops
         nlohmann_json::nlohmann_json
         modern-cpp-kafka::modern-cpp-kafka
 )
+
+# Enforce high-performance optimizations
+target_compile_options(${CAMDROPS_EXE_NAME} PRIVATE -O3 -Wall -Wextra)
+# macOS + Clang specific flag
+if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(${CAMDROPS_EXE_NAME} PRIVATE -fexperimental-library)
+    target_link_options(${CAMDROPS_EXE_NAME} PRIVATE "-fexperimental-library")
+endif()

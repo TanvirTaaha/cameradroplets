@@ -1,7 +1,5 @@
-// #include <camdrops/frame_producer.hpp>
+#include <camdrops/pipeline.hpp>
 #include <blockingconcurrentqueue.h>
-#include <kafka/KafkaProducer.h>
-
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
@@ -20,8 +18,8 @@ kafka::Properties get_kafka_props() {
         "KAFKA_BOOTSTRAP_SERVERS is not set. Example: export KAFKA_BOOTSTRAP_SERVERS=localhost:9092");
   }
   props.put("bootstrap.servers", bootstrap_servers);
-  props.put("enable.idempotence", "false");
-  props.put("acks", "1");
+  props.put("enable.idempotence", "true");
+  props.put("acks", "all");
   props.put("compression.type", "lz4");
   return props;
 }
@@ -29,7 +27,6 @@ kafka::Properties get_kafka_props() {
 int main() {
   std::cout << "Starting main thread" << std::endl;
   moodycamel::BlockingConcurrentQueue<int> queue;
-  std::atomic<bool> stop_requested{false};
 
   // std::thread metric_publisher([&queue]() {
   //   int item;
@@ -41,7 +38,7 @@ int main() {
   //   }
   // });
 
-  std::thread kafka_publisher([&queue, &stop_requested]() {
+  std::jthread kafka_publisher([&queue](std::stop_token stoken) {
     try {
       int item;
 
@@ -57,7 +54,7 @@ int main() {
         }
       };
 
-      while (!stop_requested.load(std::memory_order_relaxed)) {
+      while (!stoken.stop_requested()) {
         if (queue.wait_dequeue_timed(item, 5ms)) {
           if (item == -1) break;  // Poison pill
           auto value_len = std::snprintf(value_buffer, sizeof(value_buffer) - 1, "Hello Kafka! Item: %d", item);
@@ -73,7 +70,6 @@ int main() {
       std::cout << "Exiting kafka publisher thread" << std::endl;
     } catch (const std::exception& ex) {
       std::cerr << "Kafka publisher failed: " << ex.what() << std::endl;
-      stop_requested.store(true, std::memory_order_relaxed);
     }
   });
 
@@ -85,11 +81,10 @@ int main() {
     rc--;
   }
   std::cout << "Sending poison pill explicitly" << std::endl;
-  stop_requested.store(true, std::memory_order_relaxed);
+  
   queue.enqueue(-1);  // Send poison pill to stop threads
 
-  // metric_publisher.join();
-  kafka_publisher.join();
+  std::cout << "The version of cpp is used: " << __cplusplus << std::endl;
   std::cout << "Exiting main thread" << std::endl;
   return 0;
 }

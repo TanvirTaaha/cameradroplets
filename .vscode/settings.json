@@ -7,5 +7,6 @@
   "C_Cpp.intelliSenseEngine": "default",
   "C_Cpp.autocomplete": "default",
   "cmake.configureOnOpen": true,
-  "cmake.buildDirectory": "${workspaceFolder}/build"
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "editor.tabSize": 2
 }
